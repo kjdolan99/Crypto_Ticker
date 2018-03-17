@@ -27,13 +27,7 @@
  */
 //Hardware: TTGO Pro ESP32 OLED V2.0 Board
 
-// #include <Wire.h>  // Only needed for Arduino 1.6.5 and earlier
 #include "SSD1306.h" // alias for `#include "SSD1306Wire.h"`
-// or #include "SH1106.h" alis for `#include "SH1106Wire.h"`
-// For a connection via I2C using brzo_i2c (must be installed) include
-// #include <brzo_i2c.h> // Only needed for Arduino 1.6.5 and earlier
-// #include "SSD1306Brzo.h"
-
 
 // Include the UI lib
 #include "OLEDDisplayUi.h"
@@ -41,16 +35,24 @@
 // Include custom images
 #include "images.h"
 
-// Initialize the OLED display using brzo_i2c
-// D3 -> SDA
-// D5 -> SCL
-// SSD1306Brzo display(0x3c, D3, D5);
-// or
-// SH1106Brzo  display(0x3c, D3, D5);
+#include "WiFi.h"
+
+#include <HTTPClient.h>
+
+// WiFi Login Information
+// Create a file called "WiFi_Login.h", copy the following, and fill in your login information
+/*
+const char* ssid = "WiFi_SSID";
+//const char* password = "WiFi_PASSWORD";
+*/
+#include "WiFi_Login.h"
+
+bool connected = false;
+
+HTTPClient http;
 
 // Initialize the OLED display using Wire library
 SSD1306  display(GEOMETRY_128_64, 0x3c, 4, 15);
-// SH1106 display(0x3c, D3, D5);
 
 OLEDDisplayUi ui     ( &display );
 
@@ -61,8 +63,9 @@ void msOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
 }
 
 void drawFrame1(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
+
   display->setTextAlignment(TEXT_ALIGN_LEFT);
-  display->setFont(ArialMT_Plain_24);
+  display->setFont(ArialMT_Plain_16);
   display->drawString(0 + x, 16 + y, "Crypto Ticker!"); 	
 
 }
@@ -76,14 +79,22 @@ void drawFrame2(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int1
   display->drawStringMaxWidth(0 + x, 10 + y, 128, "Lorem ipsum\n dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore.");
 }
 
+void drawFrame3(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
+  display->setTextAlignment(TEXT_ALIGN_LEFT);
+  display->setFont(ArialMT_Plain_10);
+
+  if(connected) display->drawString(0 + x, 0 + y, "Connected to WiFi");
+  else display->drawString(0 + x, 0 + y, "Not connected to WiFi");
+}
+
 // void drawFrame5(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {}
 
 // This array keeps function pointers to all frames
 // frames are the single views that slide in
-FrameCallback frames[] = { drawFrame1, drawFrame2};
+FrameCallback frames[] = { drawFrame1, drawFrame2, drawFrame3};
 
 // how many frames are there?
-int frameCount = 2;
+int frameCount = 3;
 
 // Overlays are statically drawn on top of a frame eg. a clock
 OverlayCallback overlays[] = { msOverlay };
@@ -101,9 +112,6 @@ void setup() {
   Serial.println();
   Serial.println();
 
-	// The ESP is capable of rendering 60fps in 80Mhz mode
-	// but that won't give you much time for anything else
-	// run it in 160Mhz mode or just set it to 30 fps
   ui.setTargetFPS(60);
 
 	// Customize the active and inactive symbol
@@ -132,6 +140,15 @@ void setup() {
 
   display.flipScreenVertically();
 
+  // Connect to WiFi  
+  WiFi.begin(ssid, password);
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.println("Connecting to WiFi..");
+  }
+  
+   
 }
 
 
@@ -141,8 +158,30 @@ void loop() {
   if (remainingTimeBudget > 0) {
     // You can do some work here
     // Don't do stuff if you are below your
-    // time budget.
+    // time budget.    
+
 	Serial.println(remainingTimeBudget);
     delay(remainingTimeBudget);
-  }
+  }  
 }
+void get_http(){
+
+  http.begin("http://jsonplaceholder.typicode.com/comments?id=10");
+  int httpCode = http.GET();
+
+  if (httpCode > 0) { //Check for the returning code
+
+        String payload = http.getString();
+        Serial.println(httpCode);
+        Serial.println(payload);
+      }
+
+    else {
+      Serial.println("Error on HTTP request");
+    }
+
+    http.end(); //Free the resources 
+
+
+
+  }
