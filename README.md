@@ -10,6 +10,14 @@ These instructions will get you a copy of the project up and running on your loc
 
 What things you need to install the software and how to install them
 
+* Install Arduino IDE
+* Install [ESP32 Hardware drivers](https://learn.sparkfun.com/tutorials/esp32-thing-hookup-guide/installing-the-esp32-arduino-core) for arduino
+
+### Dependencies 
+
+* [SSD1306 Driver](https://github.com/ThingPulse/esp8266-oled-ssd1306)
+
+
 ```
 Give examples
 ```
@@ -43,6 +51,10 @@ Explain what these tests test and why
 ```
 Give an example
 ```
+
+### Issues
+
+* Uploading code to board sometimes fails. Change the serial upload speed from 921600 to 460800
 
 ### And coding style tests
 
