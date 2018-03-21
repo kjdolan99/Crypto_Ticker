@@ -37,7 +37,7 @@
 
 #include "WiFi.h"
 
-#include <HTTPClient.h>
+#include "HTTPClient.h"
 
 // WiFi Login Information
 // Create a file called "WiFi_Login.h", copy the following, and fill in your login information
@@ -50,6 +50,10 @@ const char* ssid = "WiFi_SSID";
 bool connected = false;
 
 HTTPClient http;
+
+WiFiClient client;
+
+char server[] = "https://min-api.cryptocompare.com/data/price?fsym=ETH&tsyms=BTC,USD,EUR";    // name address for Google (using DNS)
 
 // Initialize the OLED display using Wire library
 SSD1306  display(GEOMETRY_128_64, 0x3c, 4, 15);
@@ -82,9 +86,7 @@ void drawFrame2(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int1
 void drawFrame3(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->setFont(ArialMT_Plain_10);
-
-  if(connected) display->drawString(0 + x, 0 + y, "Connected to WiFi");
-  else display->drawString(0 + x, 0 + y, "Not connected to WiFi");
+  display->drawStringMaxWidth(0 + x, 10 + y, 128, "Connected to SSID: " + WiFi.SSID());
 }
 
 // void drawFrame5(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {}
@@ -108,11 +110,13 @@ void setup() {
   delay(50);
   digitalWrite(16, HIGH); // while OLED is running, must set GPIO16 in high
 
+  //Initialize the serial terminal
   Serial.begin(115200);
   Serial.println();
   Serial.println();
 
-  ui.setTargetFPS(60);
+  //Lower the FPS to reduce power?
+  ui.setTargetFPS(30);
 
 	// Customize the active and inactive symbol
   ui.setActiveSymbol(activeSymbol);
@@ -140,33 +144,57 @@ void setup() {
 
   display.flipScreenVertically();
 
+  ui.disableAutoTransition();
+
+  //Create a new task to update the screen
+  xTaskCreatePinnedToCore(
+                    update_screen,   /* Function to implement the task */
+                    "update_screen", /* Name of the task */
+                    10000,      /* Stack size in words */
+                    NULL,       /* Task input parameter */
+                    1,          /* Priority of the task */
+                    NULL,       /* Task handle. */
+                    0);			/* Core number */
+
   // Connect to WiFi  
-  WiFi.begin(ssid, password);
+ WiFi.begin(ssid, password);
 
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
     Serial.println("Connecting to WiFi..");
   }
-  
+    Serial.println("Connected to SSID: " + WiFi.SSID()); 
    
 }
-
+int update = 0;
 
 void loop() {
-  int remainingTimeBudget = ui.update();
+ 
+  if(millis()- update > 5000){
+  	  update = millis();
+	  get_http();  
+	  ui.nextFrame();  	
+  }	
+  
 
-  if (remainingTimeBudget > 0) {
-    // You can do some work here
-    // Don't do stuff if you are below your
-    // time budget.    
+}
+//Infinite loop to update the screen. Run as a task.
+void update_screen(void* arg){
 
-	Serial.println(remainingTimeBudget);
-    delay(remainingTimeBudget);
-  }  
+	while(true){
+	int remainingTimeBudget = ui.update();
+
+	  if (remainingTimeBudget > 0) {
+	    // You can do some work here
+	    // Don't do stuff if you are below your
+	    // time budget.
+	    delay(remainingTimeBudget);
+    	}
+	}
 }
 void get_http(){
 
-  http.begin("http://jsonplaceholder.typicode.com/comments?id=10");
+  http.begin(server);
   int httpCode = http.GET();
 
   if (httpCode > 0) { //Check for the returning code
@@ -181,7 +209,14 @@ void get_http(){
     }
 
     http.end(); //Free the resources 
-
-
-
   }
+ /* 
+bool SSD1306Wire::connect() {
+  Wire.begin(this->_sda, this->_scl);
+  // Let's use ~700khz if ESP8266 is in 160Mhz mode
+  // this will be limited to ~400khz if the ESP8266 in 80Mhz mode.
+  Wire.setClock(700000);
+  return true;
+}
+
+*/
