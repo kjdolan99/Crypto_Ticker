@@ -35,6 +35,8 @@
 // Include custom images
 #include "images.h"
 
+#include "ArduinoJson.h"
+
 #include "WiFi.h"
 
 #include "HTTPClient.h"
@@ -53,7 +55,9 @@ HTTPClient http;
 
 WiFiClient client;
 
-char server[] = "https://min-api.cryptocompare.com/data/price?fsym=ETH&tsyms=BTC,USD,EUR";    // name address for Google (using DNS)
+//JsonObject& root;
+
+char server[] = "https://min-api.cryptocompare.com/data/price?fsym=BTC&tsyms=USD,ETH,LTC";    
 
 // Initialize the OLED display using Wire library
 SSD1306  display(GEOMETRY_128_64, 0x3c, 4, 15);
@@ -192,6 +196,12 @@ void update_screen(void* arg){
     	}
 	}
 }
+
+const size_t capacity = JSON_OBJECT_SIZE(3) + JSON_ARRAY_SIZE(2) + 60;
+DynamicJsonBuffer jsonBuffer(capacity);
+
+// Parse JSON object
+
 void get_http(){
 
   http.begin(server);
@@ -202,7 +212,17 @@ void get_http(){
         String payload = http.getString();
         Serial.println(httpCode);
         Serial.println(payload);
-      }
+
+ 	JsonObject& root = jsonBuffer.parseObject(payload);
+	  if (!root.success()) {
+	    Serial.println(F("Parsing failed!"));
+	    return;
+		}
+	Serial.print(F("BTC: "));
+	Serial.println(root["USD"].as<char*>());
+	Serial.print(F("ETH: "));	
+	Serial.println(root["ETH"].as<char*>());
+     }
 
     else {
       Serial.println("Error on HTTP request");
@@ -210,13 +230,5 @@ void get_http(){
 
     http.end(); //Free the resources 
   }
- /* 
-bool SSD1306Wire::connect() {
-  Wire.begin(this->_sda, this->_scl);
-  // Let's use ~700khz if ESP8266 is in 160Mhz mode
-  // this will be limited to ~400khz if the ESP8266 in 80Mhz mode.
-  Wire.setClock(700000);
-  return true;
-}
 
-*/
+
