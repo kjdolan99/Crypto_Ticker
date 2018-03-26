@@ -79,15 +79,19 @@ void drawFrame1(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int1
 }
 
 void drawFrame2(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
-  // Demo for drawStringMaxWidth:
-  // with the third parameter you can define the width after which words will be wrapped.
-  // Currently only spaces and "-" are allowed for wrapping
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->setFont(ArialMT_Plain_10);
-  display->drawStringMaxWidth(0 + x, 10 + y, 128, "Lorem ipsum\n dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore.");
+  display->drawString(0 + x, 10 + y,"BTC: ");
+
+}
+void drawFrame2(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
+  display->setTextAlignment(TEXT_ALIGN_LEFT);
+  display->setFont(ArialMT_Plain_10);
+  display->drawString(0 + x, 10 + y,"ETH: ");
+
 }
 
-void drawFrame3(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
+void drawFrame4(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->setFont(ArialMT_Plain_10);
   display->drawStringMaxWidth(0 + x, 10 + y, 128, "Connected to SSID: " + WiFi.SSID());
@@ -148,13 +152,13 @@ void setup() {
 
   display.flipScreenVertically();
 
-  ui.disableAutoTransition();
+  ui.setTimePerFrame(10000);
 
   //Create a new task to update the screen
   xTaskCreatePinnedToCore(
                     update_screen,   /* Function to implement the task */
                     "update_screen", /* Name of the task */
-                    10000,      /* Stack size in words */
+                    1000,      /* Stack size in words */
                     NULL,       /* Task input parameter */
                     1,          /* Priority of the task */
                     NULL,       /* Task handle. */
@@ -174,13 +178,11 @@ int update = 0;
 
 void loop() {
  
-  if(millis()- update > 5000){
+  if(millis()- update > 20000){
   	  update = millis();
 	  get_http();  
 	  ui.nextFrame();  	
   }	
-  
-
 }
 //Infinite loop to update the screen. Run as a task.
 void update_screen(void* arg){
@@ -200,7 +202,8 @@ void update_screen(void* arg){
 const size_t capacity = JSON_OBJECT_SIZE(3) + JSON_ARRAY_SIZE(2) + 60;
 DynamicJsonBuffer jsonBuffer(capacity);
 
-// Parse JSON object
+
+char server[] = "https://min-api.cryptocompare.com/data/price?fsym=BTC&tsyms=USD,ETH,LTC";  
 
 void get_http(){
 
@@ -213,6 +216,7 @@ void get_http(){
         Serial.println(httpCode);
         Serial.println(payload);
 
+    // Parse JSON object
  	JsonObject& root = jsonBuffer.parseObject(payload);
 	  if (!root.success()) {
 	    Serial.println(F("Parsing failed!"));
@@ -230,5 +234,11 @@ void get_http(){
 
     http.end(); //Free the resources 
   }
+  /*
+  void get_price(){
+  	
+
+  	
+  } */
 
 
