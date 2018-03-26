@@ -1,6 +1,6 @@
 # Crypto Ticker
 
-One Paragraph of project description goes here
+This program will display current cryptocurrency prices on a small display. Price information is acquired from cryptocompar.com over WiFi or bluetooth. The board is based around the ESP32 microcontroller, which integrates WiFi, Bluetooth, and BLE connectivity. The final product incorporates a 3D-printed case, lithium battery, touch button, OLED display, and main control board. The device is woken up with the touch button and subsequent presses will cycle through different currencies on the display.
 
 ## Getting Started
 
@@ -8,19 +8,17 @@ These instructions will get you a copy of the project up and running on your loc
 
 ### Prerequisites
 
-What things you need to install the software and how to install them
+The required software packages are available the main 3 operating systems.
 
 * Install Arduino IDE
-* Install [ESP32 Hardware drivers](https://learn.sparkfun.com/tutorials/esp32-thing-hookup-guide/installing-the-esp32-arduino-core) for arduino
+* Install  the [ESP32 SDK](https://learn.sparkfun.com/tutorials/esp32-thing-hookup-guide/installing-the-esp32-arduino-core) for Arduino
 
 ### Dependencies 
 
 * [SSD1306 Driver](https://github.com/ThingPulse/esp8266-oled-ssd1306)
+* [ArduinoJson](https://github.com/bblanchon/ArduinoJson.git)
 
-
-```
-Give examples
-```
+* Clone to the "Home/Arduino/libraries" directory.
 
 ### Installing
 
@@ -54,15 +52,7 @@ Give an example
 
 ### Issues
 
-* Uploading code to board sometimes fails. Change the serial upload speed from 921600 to 460800
-
-### And coding style tests
-
-Explain what these tests test and why
-
-```
-Give an example
-```
+* Uploading code to some boards sometimes fails. Change the serial upload speed from 921600 to 115200
 
 ## Deployment
 
@@ -74,6 +64,8 @@ Add additional notes about how to deploy this on a live system
 * Espressif SDK
 
 ## Contributing
+
+* Kevin Dolan (kjdolan999@gmail.com)
 
 ## Versioning
 
