@@ -118,8 +118,6 @@ class cryptoCoin{
 	}
 	String getPrice(){
 		return this->price;
-
-
 	}
 
 };
@@ -137,8 +135,7 @@ void drawFrame1(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int1
   display->drawString(0 + x, 16 + y, "Crypto Ticker!"); 	
 
 }
-
-cryptoCoin btc;
+cryptoCoin btc, eth;
 
 void drawFrame2(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   display->setTextAlignment(TEXT_ALIGN_LEFT);
@@ -149,7 +146,7 @@ void drawFrame2(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int1
 void drawFrame3(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->setFont(ArialMT_Plain_16);
-  display->drawString(0 + x, 10 + y,"ETH: ");
+  display->drawString(0 + x, 10 + y,"ETH: " + eth.getPrice());
 
 }
 
@@ -237,19 +234,21 @@ void setup() {
 
     btc = cryptoCoin("BTC");
     btc.updatePrice();
+    eth = cryptoCoin("ETH");
+    eth.updatePrice();
    
 }
 int update = 0;
 
 void loop() {
  
-  if(millis()- update > 20000){
+ // if(millis()- update > 10000){
   	  update = millis();
-	  //getHttp();
-	  //getPrices("BTC");
+	  
 	  btc.updatePrice();
+	  eth.updatePrice();
 	  ui.nextFrame();  	
-  }	
+  //}	
 }
 //Infinite loop to update the screen. Run as a task.
 void update_screen(void* arg){
@@ -265,46 +264,4 @@ void update_screen(void* arg){
     	}
 	}
 }
-
-
-  
-// char server[] = "https://min-api.cryptocompare.com/data/price?fsym=BTC&tsyms=USD,ETH,LTC";
-
-/* void getPrices( const char * coin){
-
-  site = cryptoCompare + "price?fsym=" + coin + "&tsyms=USD,ETH,LTC";
-  DynamicJsonBuffer jsonBuffer(capacity);
-
-  http.begin(site);
-  int httpCode = http.GET();
-
-  if (httpCode > 0) { //Check for the returning code
-
-        String payload = http.getString();
-        Serial.println(httpCode);
-        Serial.println(payload);
-
-    // Parse JSON object
- 	JsonObject& root = jsonBuffer.parseObject(payload);
-	  if (!root.success()) {
-	    Serial.println(F("Parsing failed!"));
-	    return;
-		}
-	btc = root["USD"].as<char*>();
-	Serial.print(F("BTC: "));
-	Serial.println(root["USD"].as<char*>());
-	Serial.print(F("ETH: "));	
-	Serial.println(root["ETH"].as<char*>());
-     }
-
-    else {
-      Serial.println("Error on HTTP request");
-    }
-
-    http.end(); //Free the resources   	
-  	
-  } */
- 
-  
-
 
