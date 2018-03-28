@@ -1,6 +1,6 @@
 # Crypto Ticker
 
-This program will display current cryptocurrency prices on a small display. Price information is acquired from cryptocompar.com over WiFi or bluetooth. The board is based around the ESP32 microcontroller, which integrates WiFi, Bluetooth, and BLE connectivity. The final product incorporates a 3D-printed case, lithium battery, touch button, OLED display, and main control board. The device is woken up with the touch button and subsequent presses will cycle through different currencies on the display.
+This program will display current cryptocurrency prices on a small display. Price information is acquired from cryptocompare.com over WiFi or bluetooth. The board is based around the ESP32 microcontroller, which integrates WiFi, Bluetooth, and BLE connectivity. The final product incorporates a 3D-printed case, lithium battery, touch button, OLED display, and main control board. The device is woken up with the touch button and subsequent presses will cycle through different currencies on the display.
 
 ## Getting Started
 

@@ -55,9 +55,9 @@ HTTPClient http;
 
 WiFiClient client;
 
-//JsonObject& root;
+char server[] = "https://min-api.cryptocompare.com/data/price?fsym=BTC&tsyms=USD,ETH,LTC";
 
-char server[] = "https://min-api.cryptocompare.com/data/price?fsym=BTC&tsyms=USD,ETH,LTC";    
+String btc = "0.0";    
 
 // Initialize the OLED display using Wire library
 SSD1306  display(GEOMETRY_128_64, 0x3c, 4, 15);
@@ -80,13 +80,13 @@ void drawFrame1(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int1
 
 void drawFrame2(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   display->setTextAlignment(TEXT_ALIGN_LEFT);
-  display->setFont(ArialMT_Plain_10);
-  display->drawString(0 + x, 10 + y,"BTC: ");
+  display->setFont(ArialMT_Plain_16);
+  display->drawString(0 + x, 10 + y,"BTC: " + btc);
 
 }
-void drawFrame2(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
+void drawFrame3(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   display->setTextAlignment(TEXT_ALIGN_LEFT);
-  display->setFont(ArialMT_Plain_10);
+  display->setFont(ArialMT_Plain_16);
   display->drawString(0 + x, 10 + y,"ETH: ");
 
 }
@@ -101,10 +101,10 @@ void drawFrame4(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int1
 
 // This array keeps function pointers to all frames
 // frames are the single views that slide in
-FrameCallback frames[] = { drawFrame1, drawFrame2, drawFrame3};
+FrameCallback frames[] = { drawFrame1, drawFrame2, drawFrame3, drawFrame4};
 
 // how many frames are there?
-int frameCount = 3;
+int frameCount = 4;
 
 // Overlays are statically drawn on top of a frame eg. a clock
 OverlayCallback overlays[] = { msOverlay };
@@ -124,7 +124,7 @@ void setup() {
   Serial.println();
 
   //Lower the FPS to reduce power?
-  ui.setTargetFPS(30);
+  ui.setTargetFPS(60);
 
 	// Customize the active and inactive symbol
   ui.setActiveSymbol(activeSymbol);
@@ -158,7 +158,7 @@ void setup() {
   xTaskCreatePinnedToCore(
                     update_screen,   /* Function to implement the task */
                     "update_screen", /* Name of the task */
-                    1000,      /* Stack size in words */
+                    10000,      /* Stack size in words */
                     NULL,       /* Task input parameter */
                     1,          /* Priority of the task */
                     NULL,       /* Task handle. */
@@ -180,7 +180,8 @@ void loop() {
  
   if(millis()- update > 20000){
   	  update = millis();
-	  get_http();  
+	  //getHttp();
+	  getPrices("BTC");
 	  ui.nextFrame();  	
   }	
 }
@@ -200,14 +201,17 @@ void update_screen(void* arg){
 }
 
 const size_t capacity = JSON_OBJECT_SIZE(3) + JSON_ARRAY_SIZE(2) + 60;
-DynamicJsonBuffer jsonBuffer(capacity);
+  
+// char server[] = "https://min-api.cryptocompare.com/data/price?fsym=BTC&tsyms=USD,ETH,LTC";
+String cryptoCompare = "https://min-api.cryptocompare.com/data/";
+String site; 
+     
+void getPrices( const char * coin){
 
+  site = cryptoCompare + "price?fsym=" + coin + "&tsyms=USD,ETH,LTC";
+  DynamicJsonBuffer jsonBuffer(capacity);
 
-char server[] = "https://min-api.cryptocompare.com/data/price?fsym=BTC&tsyms=USD,ETH,LTC";  
-
-void get_http(){
-
-  http.begin(server);
+  http.begin(site);
   int httpCode = http.GET();
 
   if (httpCode > 0) { //Check for the returning code
@@ -222,6 +226,7 @@ void get_http(){
 	    Serial.println(F("Parsing failed!"));
 	    return;
 		}
+	btc = root["USD"].as<char*>();
 	Serial.print(F("BTC: "));
 	Serial.println(root["USD"].as<char*>());
 	Serial.print(F("ETH: "));	
@@ -232,13 +237,10 @@ void get_http(){
       Serial.println("Error on HTTP request");
     }
 
-    http.end(); //Free the resources 
-  }
-  /*
-  void get_price(){
-  	
+    http.end(); //Free the resources   	
 
   	
-  } */
+  } 
+  
 
 
