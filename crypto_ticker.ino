@@ -57,12 +57,72 @@ WiFiClient client;
 
 char server[] = "https://min-api.cryptocompare.com/data/price?fsym=BTC&tsyms=USD,ETH,LTC";
 
-String btc = "0.0";    
-
 // Initialize the OLED display using Wire library
 SSD1306  display(GEOMETRY_128_64, 0x3c, 4, 15);
 
 OLEDDisplayUi ui     ( &display );
+
+const size_t capacity = JSON_OBJECT_SIZE(3) + JSON_ARRAY_SIZE(2) + 60;
+const	String cryptoCompare = "https://min-api.cryptocompare.com/data/";
+
+class cryptoCoin{
+	
+	char * coin;
+	String price;
+
+	public:
+	cryptoCoin(){
+		coin = "NONE";
+		price = "0.0";
+
+	}	
+	cryptoCoin(char * name){
+		this->coin = name;
+		updatePrice();
+	}
+  bool updatePrice(){
+
+  String site = cryptoCompare + "price?fsym=" + this->coin + "&tsyms=USD,ETH,LTC";
+  DynamicJsonBuffer jsonBuffer(capacity);
+
+  http.begin(site);
+  int httpCode = http.GET();
+
+  if (httpCode > 0) { //Check for the returning code
+
+        String payload = http.getString();
+        Serial.println(httpCode);
+        Serial.println(payload);
+
+    // Parse JSON object
+ 	JsonObject& root = jsonBuffer.parseObject(payload);
+	  if (!root.success()) {
+	    Serial.println(F("Parsing failed!"));
+	    return false;
+		}	
+	Serial.print(F("BTC: "));
+	Serial.println(root["USD"].as<char*>());
+	Serial.print(F("ETH: "));	
+	Serial.println(root["ETH"].as<char*>());
+    this->price = root["USD"].as<char*>();
+    
+     }
+
+    else {
+      Serial.println("Error on HTTP request");
+      return false;
+    }
+
+    http.end(); //Free the resources   		  	
+    return true;
+	}
+	String getPrice(){
+		return this->price;
+
+
+	}
+
+};
 
 void msOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
   display->setTextAlignment(TEXT_ALIGN_RIGHT);
@@ -78,10 +138,12 @@ void drawFrame1(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int1
 
 }
 
+cryptoCoin btc;
+
 void drawFrame2(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->setFont(ArialMT_Plain_16);
-  display->drawString(0 + x, 10 + y,"BTC: " + btc);
+  display->drawString(0 + x, 10 + y,"BTC: $" + btc.getPrice());
 
 }
 void drawFrame3(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
@@ -171,7 +233,10 @@ void setup() {
     delay(1000);
     Serial.println("Connecting to WiFi..");
   }
-    Serial.println("Connected to SSID: " + WiFi.SSID()); 
+    Serial.println("Connected to SSID: " + WiFi.SSID());
+
+    btc = cryptoCoin("BTC");
+    btc.updatePrice();
    
 }
 int update = 0;
@@ -181,7 +246,8 @@ void loop() {
   if(millis()- update > 20000){
   	  update = millis();
 	  //getHttp();
-	  getPrices("BTC");
+	  //getPrices("BTC");
+	  btc.updatePrice();
 	  ui.nextFrame();  	
   }	
 }
@@ -200,13 +266,11 @@ void update_screen(void* arg){
 	}
 }
 
-const size_t capacity = JSON_OBJECT_SIZE(3) + JSON_ARRAY_SIZE(2) + 60;
+
   
 // char server[] = "https://min-api.cryptocompare.com/data/price?fsym=BTC&tsyms=USD,ETH,LTC";
-String cryptoCompare = "https://min-api.cryptocompare.com/data/";
-String site; 
-     
-void getPrices( const char * coin){
+
+/* void getPrices( const char * coin){
 
   site = cryptoCompare + "price?fsym=" + coin + "&tsyms=USD,ETH,LTC";
   DynamicJsonBuffer jsonBuffer(capacity);
@@ -238,9 +302,9 @@ void getPrices( const char * coin){
     }
 
     http.end(); //Free the resources   	
-
   	
-  } 
+  } */
+ 
   
 
 
