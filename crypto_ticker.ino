@@ -49,6 +49,8 @@ const char* ssid = "WiFi_SSID";
 */
 #include "WiFi_Login.h"
 
+const byte TOUCH_PIN = 12;
+
 bool connected = false;
 
 HTTPClient http;
@@ -63,7 +65,8 @@ SSD1306  display(GEOMETRY_128_64, 0x3c, 4, 15);
 OLEDDisplayUi ui     ( &display );
 
 const size_t capacity = JSON_OBJECT_SIZE(3) + JSON_ARRAY_SIZE(2) + 60;
-const	String cryptoCompare = "https://min-api.cryptocompare.com/data/";
+const String cryptoCompare = "https://min-api.cryptocompare.com/data/";
+
 
 class cryptoCoin{
 	
@@ -127,6 +130,9 @@ void msOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
   display->setTextAlignment(TEXT_ALIGN_RIGHT);
   display->setFont(ArialMT_Plain_10);
   display->drawString(128, 0, String(millis() / 1000));
+  //Debug for the touch button
+  //display->setTextAlignment(TEXT_ALIGN_LEFT);   
+  //if(digitalRead(TOUCH_PIN))	display->drawString(0, 0, "Touched");
 }
 
 void drawFrame1(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
@@ -170,6 +176,19 @@ int frameCount = 4;
 OverlayCallback overlays[] = { msOverlay };
 int overlaysCount = 1;
 
+//Touch interrupt setup
+
+volatile int interruptCounter = 0;
+int numberOfInterrupts = 0;
+
+portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
+
+void IRAM_ATTR handleInterrupt() {
+  portENTER_CRITICAL_ISR(&mux);
+  interruptCounter++;
+  portEXIT_CRITICAL_ISR(&mux);
+}
+
 void setup() {
 
 	//Reset the OLED
@@ -177,6 +196,10 @@ void setup() {
   digitalWrite(16, LOW); // set GPIO16 low to reset OLED
   delay(50);
   digitalWrite(16, HIGH); // while OLED is running, must set GPIO16 in high
+
+  //Setup the touch button
+  pinMode(TOUCH_PIN, INPUT);
+  attachInterrupt(digitalPinToInterrupt(TOUCH_PIN), handleInterrupt, RISING);  
 
   //Initialize the serial terminal
   Serial.begin(115200);
@@ -210,9 +233,11 @@ void setup() {
   // Initialising the UI will init the display too.
   ui.init();
 
-  display.flipScreenVertically();
+  // display.flipScreenVertically();
 
-  ui.setTimePerFrame(10000);
+  //ui.setTimePerFrame(10000);
+
+  ui.disableAutoTransition();
 
   //Create a new task to update the screen
   xTaskCreatePinnedToCore(
@@ -243,13 +268,25 @@ int update = 0;
 
 void loop() {
  
- // if(millis()- update > 10000){
-  	  update = millis();
+  if(millis()- update > 10000){
 	  
+  	  update = millis();
 	  btc.updatePrice();
 	  eth.updatePrice();
-	  ui.nextFrame();  	
-  //}	
+  }	
+  if(interruptCounter>0){
+
+      portENTER_CRITICAL(&mux);
+      interruptCounter--;
+      portEXIT_CRITICAL(&mux);
+  	  
+  	  ui.nextFrame();
+
+      numberOfInterrupts++;
+      //Button Debuging
+      //Serial.print("An interrupt has occurred. Total: ");
+      //Serial.println(numberOfInterrupts);
+  }  	
 }
 //Infinite loop to update the screen. Run as a task.
 void update_screen(void* arg){
@@ -261,6 +298,8 @@ void update_screen(void* arg){
 	    // You can do some work here
 	    // Don't do stuff if you are below your
 	    // time budget.
+
+
 	    delay(remainingTimeBudget);
     	}
 	}
