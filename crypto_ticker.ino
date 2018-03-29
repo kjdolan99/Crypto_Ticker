@@ -91,25 +91,26 @@ class cryptoCoin{
   if (httpCode > 0) { //Check for the returning code
 
         String payload = http.getString();
-        Serial.println(httpCode);
-        Serial.println(payload);
+    //    Serial.println(httpCode);
+    //    Serial.println(payload);
 
     // Parse JSON object
  	JsonObject& root = jsonBuffer.parseObject(payload);
 	  if (!root.success()) {
-	    Serial.println(F("Parsing failed!"));
+	//    Serial.println(F("Parsing failed!"));
 	    return false;
 		}	
-	Serial.print(F("BTC: "));
+	
+	/*Serial.print(F("BTC: "));
 	Serial.println(root["USD"].as<char*>());
 	Serial.print(F("ETH: "));	
-	Serial.println(root["ETH"].as<char*>());
+	Serial.println(root["ETH"].as<char*>()); */
     this->price = root["USD"].as<char*>();
     
      }
 
     else {
-      Serial.println("Error on HTTP request");
+      //Serial.println("Error on HTTP request");
       return false;
     }
 
@@ -146,7 +147,7 @@ void drawFrame2(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int1
 void drawFrame3(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->setFont(ArialMT_Plain_16);
-  display->drawString(0 + x, 10 + y,"ETH: " + eth.getPrice());
+  display->drawString(0 + x, 10 + y,"ETH: $" + eth.getPrice());
 
 }
 
