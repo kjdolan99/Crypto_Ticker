@@ -274,19 +274,6 @@ void loop() {
 	  btc.updatePrice();
 	  eth.updatePrice();
   }	
-  if(interruptCounter>0){
-
-      portENTER_CRITICAL(&mux);
-      interruptCounter--;
-      portEXIT_CRITICAL(&mux);
-  	  
-  	  ui.nextFrame();
-
-      numberOfInterrupts++;
-      //Button Debuging
-      //Serial.print("An interrupt has occurred. Total: ");
-      //Serial.println(numberOfInterrupts);
-  }  	
 }
 //Infinite loop to update the screen. Run as a task.
 void update_screen(void* arg){
@@ -294,10 +281,25 @@ void update_screen(void* arg){
 	while(true){
 	int remainingTimeBudget = ui.update();
 
-	  if (remainingTimeBudget > 0) {
 	    // You can do some work here
 	    // Don't do stuff if you are below your
 	    // time budget.
+
+		//Handle touch button interrupts	
+	  if (remainingTimeBudget > 0) {
+		  if(interruptCounter>0){
+
+		      portENTER_CRITICAL(&mux);
+		      interruptCounter--;
+		      portEXIT_CRITICAL(&mux);
+		  	  
+		  	  ui.nextFrame();
+
+		      numberOfInterrupts++;
+		      //Button Debuging
+		      //Serial.print("An interrupt has occurred. Total: ");
+		      //Serial.println(numberOfInterrupts);
+		  }  	
 
 
 	    delay(remainingTimeBudget);
