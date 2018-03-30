@@ -48,6 +48,7 @@ const char* ssid = "WiFi_SSID";
 //const char* password = "WiFi_PASSWORD";
 */
 #include "WiFi_Login.h"
+#include "esp_sleep.h"
 
 const byte TOUCH_PIN = 12;
 
@@ -266,13 +267,27 @@ void setup() {
 }
 int update = 0;
 
+const int updateInterval = 10000; //10 second update
+const int sleepTimeout = 20000; //20 second shutoff
+
+volatile int lastButtonPush;
+
+void sleep(){
+	esp_sleep_enable_ext0_wakeup((gpio_num_t)TOUCH_PIN,1);	
+	esp_deep_sleep_start();
+
+}
 void loop() {
  
-  if(millis()- update > 10000){
+  if(millis() - update > updateInterval){
 	  
   	  update = millis();
 	  btc.updatePrice();
 	  eth.updatePrice();
+  }	
+  if(millis() - lastButtonPush > sleepTimeout){
+	  
+	  sleep();
   }	
 }
 //Infinite loop to update the screen. Run as a task.
@@ -292,7 +307,7 @@ void update_screen(void* arg){
 		      portENTER_CRITICAL(&mux);
 		      interruptCounter--;
 		      portEXIT_CRITICAL(&mux);
-		  	  
+		  	  lastButtonPush = millis();
 		  	  ui.nextFrame();
 
 		      numberOfInterrupts++;
