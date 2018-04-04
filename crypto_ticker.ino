@@ -56,15 +56,13 @@ bool connected = false;
 
 HTTPClient http;
 
-char server[] = "https://min-api.cryptocompare.com/data/price?fsym=BTC&tsyms=USD,ETH,LTC";
-
 // Initialize the OLED display using Wire library
 SSD1306  display(GEOMETRY_128_64, 0x3c, 4, 15);
 
 OLEDDisplayUi ui     ( &display );
 
 const size_t capacity = JSON_OBJECT_SIZE(3) + JSON_ARRAY_SIZE(2) + 100; //Set size of the Json object
-const String cryptoCompare = "https://min-api.cryptocompare.com/data/pricemulti?fsyms=";
+const String cryptoCompare = "https://min-api.cryptocompare.com/data/pricemultifull?fsyms=";
 
 const String exchange = "Coinbase";
 const uint8_t numOfCoins = 2;
@@ -72,9 +70,9 @@ String coinNames[numOfCoins] = {"BTC","ETH"};
 
 struct cryptoCoin{
 	String name;
-	float price;
-	float hr_percent_change;
-	float day_change;
+	String price;
+	String hr_percent_change;
+	String day_percent_change;
 };
 
 //https://min-api.cryptocompare.com/data/pricemulti?fsyms=BTC,ETH&tsyms=USD&e=Coinbase&extraParams=your_app_name
@@ -86,7 +84,7 @@ class cryptoCoins{
 	bool updating;
 
 	cryptoCoins(){		
-		for(int x=0; x < numOfCoins; x++) coins[x] =  cryptoCoin{coinNames[x],0,0,0};
+		for(int x=0; x < numOfCoins; x++) coins[x] =  cryptoCoin{coinNames[x],"","",""};
 		this->updating = false;		
 	}	
   bool update(){
@@ -118,8 +116,8 @@ class cryptoCoins{
 	  if (httpCode > 0) { //Check for the returning code
 
 	        String payload = http.getString();
-	        Serial.println(httpCode);
-	        Serial.println(payload);
+	       // Serial.println(httpCode);
+	       // Serial.println(payload);
 
 	    // Parse JSON object
 	  	DynamicJsonBuffer jsonBuffer(capacity);
@@ -135,8 +133,12 @@ class cryptoCoins{
 		Serial.print(F("ETH: "));	
 		Serial.println(root["ETH"].as<char*>()); */
 
-		for(int x=0; x < numOfCoins; x++) 	this->coins[x].price = root[coinNames[x]]["USD"].as<float>();   
-	 		   
+		for(int x=0; x < numOfCoins; x++) 	{
+			this->coins[x].price = root["DISPLAY"][coinNames[x]]["USD"]["PRICE"].as<char*>();   
+			this->coins[x].day_percent_change = root["DISPLAY"][coinNames[x]]["USD"]["CHANGEPCT24HOUR"].as<char*>();
+
+ 			}
+
 	    }
 
 	    else {
@@ -179,13 +181,15 @@ void drawFrame1(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int1
 void drawFrame2(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->setFont(ArialMT_Plain_16);
-  display->drawString(0 + x, 10 + y,"BTC: $" + String(crypto.getCoin(0)->price,2));
+  display->drawString(0 + x, 10 + y,"BTC: " + crypto.getCoin(0)->price);
+  display->drawString(0 + x, 30 + y,"24hr: " + crypto.getCoin(0)->day_percent_change  + "%");
 
 }
 void drawFrame3(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->setFont(ArialMT_Plain_16);
-  display->drawString(0 + x, 10 + y,"ETH: $" + String(crypto.getCoin(1)->price,2));
+  display->drawString(0 + x, 10 + y,"ETH: " + crypto.getCoin(1)->price);
+  display->drawString(0 + x, 30 + y,"24hr: " + crypto.getCoin(1)->day_percent_change + "%");
 
 }
 
