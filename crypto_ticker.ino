@@ -56,8 +56,6 @@ bool connected = false;
 
 HTTPClient http;
 
-WiFiClient client;
-
 char server[] = "https://min-api.cryptocompare.com/data/price?fsym=BTC&tsyms=USD,ETH,LTC";
 
 // Initialize the OLED display using Wire library
@@ -65,88 +63,105 @@ SSD1306  display(GEOMETRY_128_64, 0x3c, 4, 15);
 
 OLEDDisplayUi ui     ( &display );
 
-const size_t capacity = JSON_OBJECT_SIZE(3) + JSON_ARRAY_SIZE(2) + 60;
-const String cryptoCompare = "https://min-api.cryptocompare.com/data/";
+const size_t capacity = JSON_OBJECT_SIZE(3) + JSON_ARRAY_SIZE(2) + 100; //Set size of the Json object
+const String cryptoCompare = "https://min-api.cryptocompare.com/data/pricemulti?fsyms=";
 
+const String exchange = "Coinbase";
+const uint8_t numOfCoins = 2;
+String coinNames[numOfCoins] = {"BTC","ETH"};
 
-class cryptoCoin{
-	
-	char * coin;
+struct cryptoCoin{
+	String name;
 	float price;
+	float hr_percent_change;
+	float day_change;
+};
+
+//https://min-api.cryptocompare.com/data/pricemulti?fsyms=BTC,ETH&tsyms=USD&e=Coinbase&extraParams=your_app_name
+class cryptoCoins{
+		
+	cryptoCoin coins[numOfCoins];
 
 	public:
-	cryptoCoin(){
-		coin = "NONE";
-		price = 0;
+	bool updating;
 
+	cryptoCoins(){		
+		for(int x=0; x < numOfCoins; x++) coins[x] =  cryptoCoin{coinNames[x],0,0,0};
+		this->updating = false;		
 	}	
-	cryptoCoin(char * name){
-		this->coin = name;
-		updatePrice();
+  bool update(){
+
+	  // Connect to WiFi
+	  this->updating = true;	  
+	  int wifiStatus = WiFi.begin(ssid, password);
+	  Serial.println("WiFi return code: " + String(wifiStatus));	  
+	  while (WiFi.status() != WL_CONNECTED) {
+	    delay(1000);
+	  	Serial.println("Connecting to WiFi..");
+	  }
+
+	  Serial.println("Connected to SSID: " + WiFi.SSID());	
+  	  delay(500);
+	  String site = cryptoCompare;
+
+	  for(int x=0; x < numOfCoins; x++) site += coinNames[x] + ",";
+	  site += "&tsyms=USD";
+
+
+	  site += "&e=";
+	  site += exchange;
+
+
+	  http.begin(site);
+	  int httpCode = http.GET();
+
+	  if (httpCode > 0) { //Check for the returning code
+
+	        String payload = http.getString();
+	        Serial.println(httpCode);
+	        Serial.println(payload);
+
+	    // Parse JSON object
+	  	DynamicJsonBuffer jsonBuffer(capacity);
+	 	JsonObject& root = jsonBuffer.parseObject(payload);
+		  if (!root.success()) {
+		    Serial.println(F("Parsing failed!"));
+		    return false;
+			}	
+		
+
+		/*Serial.print(F("BTC: "));
+		Serial.println(root["USD"].as<char*>());
+		Serial.print(F("ETH: "));	
+		Serial.println(root["ETH"].as<char*>()); */
+
+		for(int x=0; x < numOfCoins; x++) 	this->coins[x].price = root[coinNames[x]]["USD"].as<float>();   
+	 		   
+	    }
+
+	    else {
+	      //Serial.println("Error on HTTP request");
+	      return false;
+	    }
+
+	    http.end(); //Free the resources
+	    WiFi.disconnect(true);
+	  	WiFi.mode(WIFI_OFF);
+	  	this->updating = false;  	
+	    return true;
 	}
-  bool updatePrice(){
-
-  // Connect to WiFi  
-  WiFi.begin(ssid, password);
-
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-  //  Serial.println("Connecting to WiFi..");
-  }
-
-  Serial.println("Connected to SSID: " + WiFi.SSID());	
-
-  String site = cryptoCompare + "price?fsym=" + this->coin + "&tsyms=USD,ETH,LTC";
-  DynamicJsonBuffer jsonBuffer(capacity);
-
-  http.begin(site);
-  int httpCode = http.GET();
-
-  if (httpCode > 0) { //Check for the returning code
-
-        String payload = http.getString();
-    //    Serial.println(httpCode);
-    //    Serial.println(payload);
-
-    // Parse JSON object
- 	JsonObject& root = jsonBuffer.parseObject(payload);
-	  if (!root.success()) {
-	//    Serial.println(F("Parsing failed!"));
-	    return false;
-		}	
-	
-	/*Serial.print(F("BTC: "));
-	Serial.println(root["USD"].as<char*>());
-	Serial.print(F("ETH: "));	
-	Serial.println(root["ETH"].as<char*>()); */
-
-	 
-    this->price = root["USD"].as<float>();
-    
-     }
-
-    else {
-      //Serial.println("Error on HTTP request");
-      return false;
-    }
-
-    http.end(); //Free the resources
-    WiFi.disconnect(true);
-  	WiFi.mode(WIFI_OFF);  	
-    return true;
-
-	}
-
-	float getPrice(){
-		return this->price;
+	cryptoCoin* getCoin(int coinIndex){
+		return &this->coins[coinIndex];
 	}
 
 };
+cryptoCoins crypto;
 
 void msOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
   display->setTextAlignment(TEXT_ALIGN_RIGHT);
   display->setFont(ArialMT_Plain_10);
   display->drawString(128, 0, String(millis() / 1000));
+  if(crypto.updating)	display->drawString(0, 0, "Updating");
   //Debug for the touch button
   //display->setTextAlignment(TEXT_ALIGN_LEFT);   
   //if(digitalRead(TOUCH_PIN))	display->drawString(0, 0, "Touched");
@@ -159,18 +174,17 @@ void drawFrame1(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int1
   display->drawString(0 + x, 16 + y, "Crypto Ticker!"); 	
 
 }
-cryptoCoin btc, eth;
 
 void drawFrame2(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->setFont(ArialMT_Plain_16);
-  display->drawString(0 + x, 10 + y,"BTC: $" + String(btc.getPrice(),2));
+  display->drawString(0 + x, 10 + y,"BTC: $" + String(crypto.getCoin(0)->price,2));
 
 }
 void drawFrame3(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->setFont(ArialMT_Plain_16);
-  display->drawString(0 + x, 10 + y,"ETH: $" + String(eth.getPrice(),2));
+  display->drawString(0 + x, 10 + y,"ETH: $" + String(crypto.getCoin(1)->price,2));
 
 }
 
@@ -212,6 +226,7 @@ void IRAM_ATTR handleInterrupt() {
 }
 
 const uint8_t OLED_RESET_PIN = 16;
+
 void setup() {
 
 	//Reset the OLED
@@ -264,6 +279,8 @@ void setup() {
 
   ui.switchToFrame(prevFrame);
 
+  Serial.println("Initialized display");
+
   //Create a new task to update the screen
   xTaskCreatePinnedToCore(
                     update_screen,   /* Function to implement the task */
@@ -273,40 +290,40 @@ void setup() {
                     1,          /* Priority of the task */
                     NULL,       /* Task handle. */
                     0);			/* Core number */
-
-    btc = cryptoCoin("BTC");    
-    eth = cryptoCoin("ETH");    
+    
+    crypto = cryptoCoins();
+    crypto.update();    
    
 }
-int update = 0;
+int cryptoUpdate = 0;
 
 const int updateInterval = 10000; //10 second update
-const int sleepTimeout = 10000; //20 second shutoff
+const int sleepTimeout = 20000; //20 second shutoff
 
 volatile int lastButtonPush;
 
 void sleep(){
-	esp_sleep_enable_ext0_wakeup((gpio_num_t) TOUCH_PIN,1);
 	prevFrame = ui.getUiState()->currentFrame;
 	display.end();
-	digitalWrite(OLED_RESET_PIN, LOW); //Turn off OLED display		
+	digitalWrite(OLED_RESET_PIN, LOW); //Turn off OLED display. I'm not sure if this is necessary since the pins go floating during deep sleep (I think)		
+	esp_sleep_enable_ext0_wakeup((gpio_num_t) TOUCH_PIN,1);
 	esp_deep_sleep_start();
 
 }
 void loop() {
  
-  if(millis() - update > updateInterval){
+  if(millis() - cryptoUpdate > updateInterval){
 	  
-  	  update = millis();
-	  btc.updatePrice();
-	  eth.updatePrice();
+  	  cryptoUpdate = millis();
+  	  crypto.update();
+	  
   }	
   if(millis() - lastButtonPush > sleepTimeout){
 	  
 	  sleep();
   }	
 }
-//Infinite loop to update the screen. Run as a task.
+//Infinite loop to update the screen and handle the touch button. Run as a task.
 void update_screen(void* arg){
 
 	while(true){
