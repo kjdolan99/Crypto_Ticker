@@ -86,6 +86,16 @@ class cryptoCoin{
 	}
   bool updatePrice(){
 
+  // Connect to WiFi  
+  WiFi.begin(ssid, password);
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+  //  Serial.println("Connecting to WiFi..");
+  }
+
+  Serial.println("Connected to SSID: " + WiFi.SSID());	
+
   String site = cryptoCompare + "price?fsym=" + this->coin + "&tsyms=USD,ETH,LTC";
   DynamicJsonBuffer jsonBuffer(capacity);
 
@@ -120,9 +130,13 @@ class cryptoCoin{
       return false;
     }
 
-    http.end(); //Free the resources   		  	
+    http.end(); //Free the resources
+    WiFi.disconnect(true);
+  	WiFi.mode(WIFI_OFF);  	
     return true;
+
 	}
+
 	float getPrice(){
 		return this->price;
 	}
@@ -197,13 +211,14 @@ void IRAM_ATTR handleInterrupt() {
   portEXIT_CRITICAL_ISR(&mux);
 }
 
+const uint8_t OLED_RESET_PIN = 16;
 void setup() {
 
 	//Reset the OLED
-  pinMode(16,OUTPUT);
-  digitalWrite(16, LOW); // set GPIO16 low to reset OLED
+  pinMode(OLED_RESET_PIN,OUTPUT);
+  digitalWrite(OLED_RESET_PIN, LOW); // set GPIO16 low to reset OLED
   delay(50);
-  digitalWrite(16, HIGH); // while OLED is running, must set GPIO16 in high
+  digitalWrite(OLED_RESET_PIN, HIGH); // while OLED is running, must set GPIO16 in high
 
   //Setup the touch button
   pinMode(TOUCH_PIN, INPUT);
@@ -259,19 +274,8 @@ void setup() {
                     NULL,       /* Task handle. */
                     0);			/* Core number */
 
-  // Connect to WiFi  
- WiFi.begin(ssid, password);
-
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(1000);
-    Serial.println("Connecting to WiFi..");
-  }
-    Serial.println("Connected to SSID: " + WiFi.SSID());
-
-    btc = cryptoCoin("BTC");
-    btc.updatePrice();
-    eth = cryptoCoin("ETH");
-    eth.updatePrice();
+    btc = cryptoCoin("BTC");    
+    eth = cryptoCoin("ETH");    
    
 }
 int update = 0;
@@ -284,7 +288,8 @@ volatile int lastButtonPush;
 void sleep(){
 	esp_sleep_enable_ext0_wakeup((gpio_num_t) TOUCH_PIN,1);
 	prevFrame = ui.getUiState()->currentFrame;
-	display.end();		
+	display.end();
+	digitalWrite(OLED_RESET_PIN, LOW); //Turn off OLED display		
 	esp_deep_sleep_start();
 
 }
