@@ -72,12 +72,12 @@ const String cryptoCompare = "https://min-api.cryptocompare.com/data/";
 class cryptoCoin{
 	
 	char * coin;
-	String price;
+	float price;
 
 	public:
 	cryptoCoin(){
 		coin = "NONE";
-		price = "0.0";
+		price = 0;
 
 	}	
 	cryptoCoin(char * name){
@@ -109,7 +109,9 @@ class cryptoCoin{
 	Serial.println(root["USD"].as<char*>());
 	Serial.print(F("ETH: "));	
 	Serial.println(root["ETH"].as<char*>()); */
-    this->price = root["USD"].as<char*>();
+
+	 
+    this->price = root["USD"].as<float>();
     
      }
 
@@ -121,7 +123,7 @@ class cryptoCoin{
     http.end(); //Free the resources   		  	
     return true;
 	}
-	String getPrice(){
+	float getPrice(){
 		return this->price;
 	}
 
@@ -148,13 +150,13 @@ cryptoCoin btc, eth;
 void drawFrame2(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->setFont(ArialMT_Plain_16);
-  display->drawString(0 + x, 10 + y,"BTC: $" + btc.getPrice());
+  display->drawString(0 + x, 10 + y,"BTC: $" + String(btc.getPrice(),2));
 
 }
 void drawFrame3(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->setFont(ArialMT_Plain_16);
-  display->drawString(0 + x, 10 + y,"ETH: $" + eth.getPrice());
+  display->drawString(0 + x, 10 + y,"ETH: $" + String(eth.getPrice(),2));
 
 }
 
@@ -173,6 +175,9 @@ FrameCallback frames[] = { drawFrame1, drawFrame2, drawFrame3, drawFrame4};
 // how many frames are there?
 int frameCount = 4;
 
+//Remembers the last frame before it went to sleep.
+RTC_DATA_ATTR uint8_t prevFrame = 0;
+
 // Overlays are statically drawn on top of a frame eg. a clock
 OverlayCallback overlays[] = { msOverlay };
 int overlaysCount = 1;
@@ -182,8 +187,10 @@ int overlaysCount = 1;
 volatile int interruptCounter = 0;
 int numberOfInterrupts = 0;
 
+
 portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
 
+//Interrupt handler for the touch button
 void IRAM_ATTR handleInterrupt() {
   portENTER_CRITICAL_ISR(&mux);
   interruptCounter++;
@@ -240,6 +247,8 @@ void setup() {
 
   ui.disableAutoTransition();
 
+  ui.switchToFrame(prevFrame);
+
   //Create a new task to update the screen
   xTaskCreatePinnedToCore(
                     update_screen,   /* Function to implement the task */
@@ -268,12 +277,14 @@ void setup() {
 int update = 0;
 
 const int updateInterval = 10000; //10 second update
-const int sleepTimeout = 20000; //20 second shutoff
+const int sleepTimeout = 10000; //20 second shutoff
 
 volatile int lastButtonPush;
 
 void sleep(){
-	esp_sleep_enable_ext0_wakeup((gpio_num_t)TOUCH_PIN,1);	
+	esp_sleep_enable_ext0_wakeup((gpio_num_t) TOUCH_PIN,1);
+	prevFrame = ui.getUiState()->currentFrame;
+	display.end();		
 	esp_deep_sleep_start();
 
 }
