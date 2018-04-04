@@ -161,9 +161,10 @@ void msOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
   display->setTextAlignment(TEXT_ALIGN_RIGHT);
   display->setFont(ArialMT_Plain_10);
   display->drawString(128, 0, String(millis() / 1000));
+  
+  display->setTextAlignment(TEXT_ALIGN_LEFT);   
   if(crypto.updating)	display->drawString(0, 0, "Updating");
   //Debug for the touch button
-  //display->setTextAlignment(TEXT_ALIGN_LEFT);   
   //if(digitalRead(TOUCH_PIN))	display->drawString(0, 0, "Touched");
 }
 
