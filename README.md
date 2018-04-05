@@ -24,10 +24,6 @@ The required software packages are available the main 3 operating systems.
 
 * Uploading code to some boards fails. Change the serial upload speed from 921600 to 115200 in the Arduino IDE.
 
-## Deployment
-
-Add additional notes about how to deploy this on a live system
-
 ## Built With
 
 * Arduino IDE
@@ -36,8 +32,6 @@ Add additional notes about how to deploy this on a live system
 ## Contributing
 
 * Kevin Dolan (kjdolan999@gmail.com)
-
-## Versioning
 
 ## Authors
 
@@ -51,7 +45,6 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 
 * https://techtutorialsx.com/
 * Andreas Spiess
-* Hat tip to anyone who's code was used
-* Inspiration
-* etc
+* Daniel Eichhorn [(@squix78)](https://github.com/squix78)
+
 

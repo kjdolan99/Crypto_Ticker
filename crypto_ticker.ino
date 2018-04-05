@@ -91,15 +91,14 @@ class cryptoCoins{
 
 	  // Connect to WiFi
 	  this->updating = true;	  
-	  int wifiStatus = WiFi.begin(ssid, password);
-	  Serial.println("WiFi return code: " + String(wifiStatus));	  
+	  if(WiFi.status() != WL_CONNECTED)  WiFi.begin(ssid, password);
+	  	  
 	  while (WiFi.status() != WL_CONNECTED) {
 	    delay(1000);
 	  	Serial.println("Connecting to WiFi..");
 	  }
 
-	  Serial.println("Connected to SSID: " + WiFi.SSID());	
-  	  delay(500);
+	  Serial.println("Connected to SSID: " + WiFi.SSID());	  	  
 	  String site = cryptoCompare;
 
 	  for(int x=0; x < numOfCoins; x++) site += coinNames[x] + ",";
@@ -233,6 +232,8 @@ void IRAM_ATTR handleInterrupt() {
 const uint8_t OLED_RESET_PIN = 16;
 
 void setup() {
+
+  WiFi.begin(ssid, password);
 
 	//Reset the OLED
   pinMode(OLED_RESET_PIN,OUTPUT);
