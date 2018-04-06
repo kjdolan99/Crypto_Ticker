@@ -27,7 +27,7 @@
  */
 //Hardware: TTGO Pro ESP32 OLED V2.0 Board
 
-#include "SSD1306.h" // alias for `#include "SSD1306Wire.h"`
+#include "SSD1306.h" // 
 
 // Include the UI lib
 #include "OLEDDisplayUi.h"
@@ -57,7 +57,9 @@ bool connected = false;
 HTTPClient http;
 
 // Initialize the OLED display using Wire library
-SSD1306  display(GEOMETRY_128_64, 0x3c, 4, 15);
+//sda pin 4, scl pin 15
+
+SSD1306  display(0x3c, 4, 15, GEOMETRY_128_64);
 
 OLEDDisplayUi ui     ( &display );
 
@@ -231,6 +233,9 @@ void IRAM_ATTR handleInterrupt() {
 
 const uint8_t OLED_RESET_PIN = 16;
 
+
+TaskHandle_t update_screen_handle = NULL;
+
 void setup() {
 
   WiFi.begin(ssid, password);
@@ -285,16 +290,16 @@ void setup() {
 
   ui.switchToFrame(prevFrame);
 
-  Serial.println("Initialized display");
+  Serial.println("Initialized display");  
 
   //Create a new task to update the screen
   xTaskCreatePinnedToCore(
                     update_screen,   /* Function to implement the task */
                     "update_screen", /* Name of the task */
-                    10000,      /* Stack size in words */
+                    2000,      /* Stack size in words */
                     NULL,       /* Task input parameter */
                     1,          /* Priority of the task */
-                    NULL,       /* Task handle. */
+                    &update_screen_handle,       /* Task handle. */
                     0);			/* Core number */
     
     crypto = cryptoCoins();
@@ -309,8 +314,14 @@ const int sleepTimeout = 20000; //20 second shutoff
 volatile int lastButtonPush;
 
 void sleep(){
+	//Save info before going to sleep
 	prevFrame = ui.getUiState()->currentFrame;
+
+	//delete the update_screen task
+	if( update_screen_handle != NULL ) vTaskDelete( update_screen_handle );    
+
 	display.end();
+
 	digitalWrite(OLED_RESET_PIN, LOW); //Turn off OLED display. I'm not sure if this is necessary since the pins go floating during deep sleep (I think)		
 	esp_sleep_enable_ext0_wakeup((gpio_num_t) TOUCH_PIN,1);
 	esp_deep_sleep_start();
@@ -358,6 +369,9 @@ void update_screen(void* arg){
 
 	    delay(remainingTimeBudget);
     	}
+    	//Used to check if the stack is full
+    	//int highMark = uxTaskGetStackHighWaterMark(NULL);
+    	//Serial.println("Remaining stack: " + String(highMark));
 	}
 }
 
