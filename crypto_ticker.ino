@@ -358,6 +358,7 @@ void update_screen(void* arg){
 		      interruptCounter--;
 		      portEXIT_CRITICAL(&mux);
 		  	  lastButtonPush = millis();
+		  	  
 		  	  ui.nextFrame();
 
 		      numberOfInterrupts++;
