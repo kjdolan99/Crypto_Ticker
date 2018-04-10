@@ -6,6 +6,13 @@ This program will display current cryptocurrency prices on a small display. Pric
 
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
 
+### Hardware
+
+* [Pro ESP32 OLED V2.0 TTGO](https://www.aliexpress.com/item/Lolin-ESP32-OLED-V2-0-Pro-ESP32-OLED-wemos-pour-Arduino-ESP32-OLED-WiFi-Modules-Bluetooth/32824819112.html)
+* [Capacitive Touch Button](https://www.aliexpress.com/item/10-Pcs-TTP223-Touch-Key-Switch-Module-Touching-Button-Capacitive-Switches-Self-Locking-No-Locking-Module/32793578915.html)
+* Lithium Battery 6.0x24x47mm (602447)
+* 3D printed case
+
 ### Prerequisites
 
 The required software packages are available the main 3 operating systems.
