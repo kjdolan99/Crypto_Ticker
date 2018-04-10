@@ -48,7 +48,11 @@ const char* ssid = "WiFi_SSID";
 //const char* password = "WiFi_PASSWORD";
 */
 #include "WiFi_Login.h"
+
 #include "esp_sleep.h"
+
+#include "esp_wifi.h"
+
 
 const byte TOUCH_PIN = 12;
 
@@ -92,7 +96,8 @@ class cryptoCoins{
   bool update(){
 
 	  // Connect to WiFi
-	  this->updating = true;	  
+	  this->updating = true;
+	  bool success = false;	  
 	  if(WiFi.status() != WL_CONNECTED)  WiFi.begin(ssid, password);
 	  	  
 	  while (WiFi.status() != WL_CONNECTED) {
@@ -116,7 +121,12 @@ class cryptoCoins{
 
 	  if (httpCode > 0) { //Check for the returning code
 
+	        success = true;
 	        String payload = http.getString();
+		    
+		    http.end(); //Free the resources
+		    WiFi.disconnect(true);
+		  	WiFi.mode(WIFI_OFF);
 	       // Serial.println(httpCode);
 	       // Serial.println(payload);
 
@@ -124,8 +134,7 @@ class cryptoCoins{
 	  	DynamicJsonBuffer jsonBuffer(capacity);
 	 	JsonObject& root = jsonBuffer.parseObject(payload);
 		  if (!root.success()) {
-		    Serial.println(F("Parsing failed!"));
-		    return false;
+		    Serial.println(F("Parsing failed!"));		    
 			}	
 		
 
@@ -144,14 +153,13 @@ class cryptoCoins{
 
 	    else {
 	      //Serial.println("Error on HTTP request");
-	      return false;
+	      http.end(); //Free the resources
+		  WiFi.disconnect(true);
+		  WiFi.mode(WIFI_OFF);	      
 	    }
 
-	    http.end(); //Free the resources
-	    WiFi.disconnect(true);
-	  	WiFi.mode(WIFI_OFF);
 	  	this->updating = false;  	
-	    return true;
+	    return success;
 	}
 	cryptoCoin* getCoin(int coinIndex){
 		return &this->coins[coinIndex];
@@ -308,7 +316,7 @@ void setup() {
 }
 int cryptoUpdate = 0;
 
-const int updateInterval = 10000; //10 second update
+const int updateInterval = 12000; //10 second update
 const int sleepTimeout = 20000; //20 second shutoff
 
 volatile int lastButtonPush;
@@ -322,6 +330,8 @@ void sleep(){
 
 	display.end();
 
+	esp_wifi_stop();
+
 	digitalWrite(OLED_RESET_PIN, LOW); //Turn off OLED display. I'm not sure if this is necessary since the pins go floating during deep sleep (I think)		
 	esp_sleep_enable_ext0_wakeup((gpio_num_t) TOUCH_PIN,1);
 	esp_deep_sleep_start();
@@ -329,11 +339,10 @@ void sleep(){
 }
 void loop() {
  
-  if(millis() - cryptoUpdate > updateInterval){
+  if(millis() - cryptoUpdate > updateInterval && !(millis() - lastButtonPush > updateInterval)){
 	  
-  	  cryptoUpdate = millis();
-  	  crypto.update();
-	  
+  	  cryptoUpdate = millis();  	  
+  	  crypto.update();	  
   }	
   if(millis() - lastButtonPush > sleepTimeout){
 	  
