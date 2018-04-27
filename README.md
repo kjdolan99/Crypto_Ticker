@@ -4,7 +4,6 @@ This program will display current cryptocurrency prices on a small display. Pric
 
 ## Getting Started
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
 
 ### Hardware
 
@@ -12,10 +11,11 @@ These instructions will get you a copy of the project up and running on your loc
 * [Capacitive Touch Button](https://www.aliexpress.com/item/10-Pcs-TTP223-Touch-Key-Switch-Module-Touching-Button-Capacitive-Switches-Self-Locking-No-Locking-Module/32793578915.html)
 * Lithium Battery 6.0x24x47mm (602447)
 * 3D printed case
+* [Hardware build instructions on Instructables]()
 
 ### Prerequisites
 
-The required software packages are available the main 3 operating systems.
+The required software packages are available for the main 3 operating systems.
 
 * Install the [Arduino IDE](https://www.arduino.cc/en/Main/Software)
 * Install  the [ESP32 SDK](https://learn.sparkfun.com/tutorials/esp32-thing-hookup-guide/installing-the-esp32-arduino-core) for Arduino
@@ -37,8 +37,6 @@ The required software packages are available the main 3 operating systems.
 * Espressif SDK
 
 ## Contributing
-
-* Kevin Dolan (kjdolan999@gmail.com)
 
 ## Authors
 
